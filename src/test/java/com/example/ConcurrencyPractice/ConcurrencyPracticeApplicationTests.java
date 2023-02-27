@@ -1,5 +1,6 @@
 package com.example.ConcurrencyPractice;
 
+import com.example.ConcurrencyPractice.model.Product;
 import com.example.ConcurrencyPractice.service.BasicProductService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -49,8 +50,33 @@ class ConcurrencyPracticeApplicationTests {
 	}
 
 	@Test
-	@DisplayName("Update 쿼리로 해결한 조회 테스트")
-	void viewProductWithUpdateQuery() throws InterruptedException {
+	@DisplayName("비관적 락 사용 - SQL에서 FOR UPDATE로 구현 즉, X-Lock")
+	void viewProductWithPessimistic() throws InterruptedException {
+		ExecutorService executorService = Executors.newFixedThreadPool(100);
+		CountDownLatch countDownLatch = new CountDownLatch(100);
+		AtomicInteger count = new AtomicInteger();
+		Long testId = 45L;
+
+		Long views = basicProductService.getViews(testId);
+		IntStream.range(0, 100).forEach(e -> executorService.submit(() -> {
+					try {
+						basicProductService.viewProductWithPessimistic(testId);
+						count.getAndIncrement();
+					} finally {
+						countDownLatch.countDown();
+					}
+				}
+		));
+		countDownLatch.await();
+		Long result = (basicProductService.getViews(testId)) - views;
+
+		System.out.println("총 조회 횟수 : " + count.get());
+		System.out.println("실제 증가한 조회 수 : " + result);
+	}
+
+	@Test
+	@DisplayName("For Update(베타적 락) 사용한 조회 테스트")
+	void viewProductWithForUpdate() throws InterruptedException {
 		ExecutorService executorService = Executors.newFixedThreadPool(100);
 		CountDownLatch countDownLatch = new CountDownLatch(100);
 		AtomicInteger count = new AtomicInteger();

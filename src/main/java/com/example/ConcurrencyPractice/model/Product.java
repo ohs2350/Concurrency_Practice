@@ -17,16 +17,12 @@ public class Product {
 
     @Id
     @GeneratedValue
-    @Column(name = "ID")
     private Long id;
 
-    @Column(name = "NAME")
     private String name;
 
-    @Column(name = "QUANTITY")
     private Long quantity;
 
-    @Column(name = "VIEWS")
     private Long views;
 
 
